@@ -117,19 +117,12 @@ jobs:
           mkdir -p ./output
           copy ./target/release/rustdesk.exe ./output/rustdesk-${{ env.VERSION }}-${{ matrix.job.arch }}.exe
 
-      - name: Upload unsigned exe
+      - name: Upload executable
         if: env.UPLOAD_ARTIFACT == 'true'
         uses: actions/upload-artifact@master
         with:
-          name: rustdesk-unsigned-windows-${{ matrix.job.arch }}-inline
+          name: rustdesk-windows-${{ matrix.job.arch }}-inline
           path: ./output/rustdesk-*.exe
-
-      - name: Sign rustdesk exe
-        if: env.UPLOAD_ARTIFACT == 'true' && secrets.SIGN_BASE_URL != ''
-        shell: bash
-        run: |
-          pip3 install requests argparse
-          BASE_URL=${{ secrets.SIGN_BASE_URL }} SECRET_KEY=${{ secrets.SIGN_SECRET_KEY }} python3 res/job.py sign_files ./output/
 
       - name: Publish Release
         if: env.UPLOAD_ARTIFACT == 'true'

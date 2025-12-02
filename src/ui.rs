@@ -176,13 +176,27 @@ pub fn start(args: &mut [String]) {
         frame.load_html(html.as_bytes(), Some(page));
     }
     #[cfg(not(feature = "inline"))]
-    frame.load_file(&format!(
-        "file://{}/src/ui/{}",
-        std::env::current_dir()
-            .map(|c| c.display().to_string())
-            .unwrap_or("".to_owned()),
-        page
-    ));
+    {
+        // Prefer resources located next to the executable (portable bundle),
+        // otherwise fall back to current working directory (dev/cargo run).
+        let exe_dir = std::env::current_exe()
+            .ok()
+            .and_then(|p| p.parent().map(|p| p.to_path_buf()))
+            .unwrap_or_else(|| std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from(".")));
+        let candidate = exe_dir.join("src").join("ui").join(page);
+        let uri = if candidate.exists() {
+            format!("file://{}", candidate.display())
+        } else {
+            format!(
+                "file://{}/src/ui/{}",
+                std::env::current_dir()
+                    .map(|c| c.display().to_string())
+                    .unwrap_or("".to_owned()),
+                page
+            )
+        };
+        frame.load_file(&uri);
+    }
     let hide_cm = *cm::HIDE_CM.lock().unwrap();
     if !args.is_empty() && args[0] == "--cm" && hide_cm {
         // run_app calls expand(show) + run_loop, we use collapse(hide) + run_loop instead to create a hidden window
